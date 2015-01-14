@@ -6,7 +6,7 @@ class NumberSet
   end
 
   def each(&block)
-     @numbers.each(&block)        # 1
+     @numbers.each(&block)
   end
 
   def <<(number)
@@ -18,14 +18,14 @@ class NumberSet
   end
 
   def empty?
-    @numbers.empty?         # 2
+    @numbers.empty?
   end
 
   def [](filter)
     filtered = NumberSet.new
 
-    each do |number|                                     # 3
-      filtered << number if filter.block.call number     # 4
+    each do |number|
+      filtered << number if filter.block.call number
     end
 
     filtered
@@ -34,7 +34,7 @@ end
 
 class Filter
 
-  attr_accessor :block      # 5
+  attr_accessor :block
 
   def initialize(&block)
     @block = block
@@ -49,7 +49,7 @@ class Filter
   end
 end
 
-class TypeFilter < Filter      # 6
+class TypeFilter < Filter
   def initialize(type)
     case type
     when :integer  then super() {|x| x.is_a? Integer}
@@ -59,7 +59,7 @@ class TypeFilter < Filter      # 6
   end
 end
 
-class SignFilter < Filter      # 7
+class SignFilter < Filter
   def initialize(sign)
     case sign
     when :positive     then super() {|x| x > 0}

@@ -1,5 +1,5 @@
 module RBFS
-  class Parser  # 12
+  class Parser
     def initialize(string_data)
       @string_data = string_data
     end
@@ -36,13 +36,13 @@ module RBFS
       "#{data_type}:#{data}"
     end
 
-    def self.parse(string_data) # 1
-      data_type, data = string_data.split(':', 2)  # 2
-      data = case data_type                        # 3
+    def self.parse(string_data)
+      data_type, data = string_data.split(':', 2)
+      data = case data_type
              when 'string'  then data
-             when 'symbol'  then data.to_sym       # 4
-             when 'number'  then data.to_f         # 5
-             when 'boolean' then data == 'true'    # 6
+             when 'symbol'  then data.to_sym
+             when 'number'  then data.to_f
+             when 'boolean' then data == 'true'
              end
       File.new(data)
     end
@@ -50,7 +50,7 @@ module RBFS
 
   class Directory
 
-    attr_reader :files, :directories  # 7
+    attr_reader :files, :directories
 
     def initialize()
       @files = {}
@@ -61,19 +61,19 @@ module RBFS
       @files[name] = file
     end
 
-    def add_directory(name, directory = Directory.new) # 8
+    def add_directory(name, directory = Directory.new)
       @directories[name] = directory
     end
 
     def [](name)
-      directories[name] || files[name]  # 9
+      directories[name] || files[name]
     end
 
-    def serialize   # 10
+    def serialize
       "#{serialize_entities(files)}#{serialize_entities(directories)}"
     end
 
-    def self.parse(string_data) # 13
+    def self.parse(string_data)
       directory = Directory.new
       parser = Parser.new(string_data)
 
@@ -89,7 +89,7 @@ module RBFS
 
     private
 
-    def serialize_entities(entities)  # 11
+    def serialize_entities(entities)
       serialized_entities = entities.map do |name, content|
         serialized_content = content.serialize
         "#{name}:#{serialized_content.length}:#{serialized_content}"
