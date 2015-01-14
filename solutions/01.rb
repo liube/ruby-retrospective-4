@@ -1,21 +1,15 @@
-def fibonacci(number)
-  if number <= 2 then 1
-  else fibonacci(number - 1) + fibonacci(number - 2)
-  end
+def generic_series(nth, first_value, second_value)
+  return first_value if nth == 1
+  return second_value if nth == 2
+
+  generic_series(nth - 1, first_value, second_value) +
+  generic_series(nth - 2, first_value, second_value)
 end
 
-def lucas(number)
-  case number
-    when 1 then 2
-    when 2 then 1
-    else lucas(number - 1) + lucas(number - 2)
-  end
-end
-
-def series(sequence_type, number)
+def series(sequence_type, nth)
   case sequence_type
-    when 'fibonacci' then fibonacci(number)
-    when 'lucas'     then lucas(number)
-    when 'summed'    then fibonacci(number) + lucas(number)
+  when 'fibonacci' then generic_series(nth, 1, 1)
+  when 'lucas'     then generic_series(nth, 2, 1)
+  when 'summed'    then generic_series(nth, 1, 1) + generic_series(nth, 2, 1)
   end
 end

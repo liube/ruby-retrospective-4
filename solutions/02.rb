@@ -5,14 +5,12 @@ class NumberSet
     @numbers = []
   end
 
-  def each
-     @numbers.each {|number| yield number}
+  def each(&block)
+     @numbers.each(&block)        # 1
   end
 
   def <<(number)
-    unless @numbers.include? number
-      @numbers << number
-    end
+    @numbers << number unless @numbers.include? number
   end
 
   def size
@@ -20,78 +18,54 @@ class NumberSet
   end
 
   def empty?
-    size == 0
+    @numbers.empty?         # 2
   end
 
   def [](filter)
-    numbers = NumberSet.new
+    filtered = NumberSet.new
 
-    @numbers.each do |number|
-      if filter.check.call number
-        numbers << number
-      end
+    each do |number|                                     # 3
+      filtered << number if filter.block.call number     # 4
     end
 
-    numbers
+    filtered
   end
 end
 
 class Filter
 
-  attr_accessor :check
+  attr_accessor :block      # 5
 
-  def initialize(&check)
-    @check = check
+  def initialize(&block)
+    @block = block
+  end
+
+  def &(other)
+    Filter.new {|x| block.call x and other.block.call x}
+  end
+
+  def |(other)
+    Filter.new {|x| block.call x or other.block.call x}
   end
 end
 
-class TypeFilter < Filter
-
+class TypeFilter < Filter      # 6
   def initialize(type)
     case type
-      when :integer  then @check = integer
-      when :real     then @check = real
-      when :complex  then @check = complex
+    when :integer  then super() {|x| x.is_a? Integer}
+    when :real     then super() {|x| x.is_a? Float or x.is_a? Rational}
+    when :complex  then super() {|x| x.is_a? Complex}
     end
-  end
-
-  def integer
-    lambda {|number| number.class == Fixnum}
-  end
-
-  def real
-    lambda {|number| number.class == Float || number.class == Rational}
-  end
-
-  def complex
-    lambda {|number| number.class == Complex}
   end
 end
 
-class SignFilter < Filter
-
+class SignFilter < Filter      # 7
   def initialize(sign)
     case sign
-      when :positive     then  @check = positive
-      when :non_positive then  @check = non_positive
-      when :negative     then  @check = negative
-      when :non_negative then  @check = non_negative
+    when :positive     then super() {|x| x > 0}
+    when :non_positive then super() {|x| x <= 0}
+    when :negative     then super() {|x| x < 0}
+    when :non_negative then super() {|x| x >= 0}
     end
-  end
-
-  def positive
-    lambda {|number| number > 0}
-  end
-
-  def non_positive
-    lambda {|number| number <= 0}
-  end
-
-  def negative
-    lambda {|number| number < 0}
-  end
-
-  def non_negative
-    lambda {|number| number >= 0}
   end
 end

@@ -1,78 +1,100 @@
 module RBFS
+  class Parser  # 12
+    def initialize(string_data)
+      @string_data = string_data
+    end
 
-class File
-
-  attr_accessor :data
-
-  def initialize(data = nil)
-    @data = data
-  end
-
-  def data_type
-    case @data
-    when nil                   then :nil
-    when String                then :string
-    when Symbol                then :symbol
-    when Integer, Float        then :number
-    when TrueClass, FalseClass then :boolean
+    def parse_entities
+      entities_count, @string_data = @string_data.split(':', 2)
+      entities_count.to_i.times do
+        name, length, rest = @string_data.split(':', 3)
+        yield name, rest[0...length.to_i]
+        @string_data = rest[length.to_i..-1]
+      end
     end
   end
 
-  def serialize
-    "#{data_type}:#{data}"
-  end
+  class File
 
-  def File.parse(string_data)
-    data_type, data = string_data.split(":")
-    case data_type
-    when "nil"     then File.new
-    when "string"  then File.new(data)
-    when "symbol"  then File.new(:"#{data}")
-    when "number"  then create_file_object_with_int_or_float_data_value(data)
-    when "boolean" then create_file_object_with_data_value_true_or_false(data)
+    attr_accessor :data
+
+    def initialize(data = nil)
+      @data = data
+    end
+
+    def data_type
+      case @data
+      when NilClass              then :nil
+      when String                then :string
+      when Symbol                then :symbol
+      when Integer, Float        then :number
+      when TrueClass, FalseClass then :boolean
+      end
+    end
+
+    def serialize
+      "#{data_type}:#{data}"
+    end
+
+    def self.parse(string_data) # 1
+      data_type, data = string_data.split(':', 2)  # 2
+      data = case data_type                        # 3
+             when 'string'  then data
+             when 'symbol'  then data.to_sym       # 4
+             when 'number'  then data.to_f         # 5
+             when 'boolean' then data == 'true'    # 6
+             end
+      File.new(data)
     end
   end
 
-  def File.create_file_object_with_int_or_float_data_value(data)
-    (data.include? ".") ? File.new(data.to_f) : File.new(data.to_i)
-  end
+  class Directory
 
-  def File.create_file_object_with_data_value_true_or_false(data)
-    data == "true"      ? File.new(true)      : File.new(false)
-  end
-end
+    attr_reader :files, :directories  # 7
 
-class Directory
+    def initialize()
+      @files = {}
+      @directories = {}
+    end
 
-  def initialize(files = {}, directories = {})
-    @files = files
-    @directories = directories
-  end
+    def add_file(name, file)
+      @files[name] = file
+    end
 
-  def add_file(name, file)
-    @files[name] = file
-  end
+    def add_directory(name, directory = Directory.new) # 8
+      @directories[name] = directory
+    end
 
-  def add_directory(name, directory = nil)
-    @directories[name] = directory ? directory : Directory.new
-  end
+    def [](name)
+      directories[name] || files[name]  # 9
+    end
 
-  def [](name)
-    directories[name] ? directories[name] : files[name]
-  end
+    def serialize   # 10
+      "#{serialize_entities(files)}#{serialize_entities(directories)}"
+    end
 
-  def serialize
-  end
+    def self.parse(string_data) # 13
+      directory = Directory.new
+      parser = Parser.new(string_data)
 
-  def Directory.parse(string_data)
-  end
+      parser.parse_entities do |name, data|
+        directory.add_file(name, File.parse(data))
+      end
+      parser.parse_entities do |name, data|
+        directory.add_directory(name, parse(data))
+      end
 
-  def files
-    @files
-  end
+      directory
+    end
 
-  def directories
-    @directories
+    private
+
+    def serialize_entities(entities)  # 11
+      serialized_entities = entities.map do |name, content|
+        serialized_content = content.serialize
+        "#{name}:#{serialized_content.length}:#{serialized_content}"
+      end
+      "#{entities.count}:#{serialized_entities.join('')}"
+    end
   end
-end
 end
